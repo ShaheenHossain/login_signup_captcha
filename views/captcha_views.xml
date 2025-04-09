@@ -1,58 +1,171 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <odoo>
 
-  <!-- Login Page -->
-  <template id="login_recaptcha_inherit" inherit_id="auth_signup.login">
-    <xpath expr="//button[@type='submit']" position="before">
-      <script src="https://www.google.com/recaptcha/api.js" async="async" defer="defer"></script>
-      <div class="form-group">
-        <div class="g-recaptcha"
-             data-sitekey="6Le5nMQUAAAAALpK02mtPPGnpjVlnq6orhz4Zj0u"
-             data-callback="verifyRecaptchaCallback"
-             data-expired-callback="expiredRecaptchaCallback">
-        </div>
-        <div class="help-block with-errors" id="login-captcha-error" style="color: red;"></div>
-      </div>
-      <script type="text/javascript">
-        odoo.define('login_signup_captcha.login_recaptcha', function (require) {
-          require('web.dom_ready');
-          $('form').on('submit', function (event) {
-            var recaptcha = $('#g-recaptcha-response').val();
-            if (!recaptcha) {
-              event.preventDefault();
-              $('#login-captcha-error').text("Por favor verificar el Captcha.");
-            }
-          });
-        });
-      </script>
-    </xpath>
-  </template>
+<template id="login_recaptcha_inherit" inherit_id="auth_signup.login" name="Login Page reCAPTCHA">
+<!--    <xpath expr="//form[contains(@class, 'oe_login_form')]" position="inside">-->
+  <xpath expr="//button[@type='submit']" position="before">
 
-  <!-- Signup Page -->
-  <template id="signup_recaptcha_inherit" inherit_id="auth_signup.signup">
-    <xpath expr="//button[@type='submit']" position="before">
-      <script src="https://www.google.com/recaptcha/api.js" async="async" defer="defer"></script>
-      <div class="form-group">
+        <!-- Load Google reCAPTCHA v2 script -->
+        <script src="https://www.google.com/recaptcha/api.js" async="true" defer="true"></script>
+
+        <!-- reCAPTCHA Widget -->
         <div class="g-recaptcha"
              data-sitekey="6Le5nMQUAAAAALpK02mtPPGnpjVlnq6orhz4Zj0u"
-             data-callback="verifyRecaptchaCallback"
-             data-expired-callback="expiredRecaptchaCallback">
-        </div>
-        <div class="help-block with-errors" id="signup-captcha-error" style="color: red;"></div>
-      </div>
-      <script type="text/javascript">
-        odoo.define('login_signup_captcha.signup_recaptcha', function (require) {
-          require('web.dom_ready');
-          $('.oe_signup_form').on('submit', function (event) {
-            var recaptcha = $('#g-recaptcha-response').val();
-            if (!recaptcha) {
-              event.preventDefault();
-              $('#signup-captcha-error').text("Por favor verificar el Captcha.");
-            }
+             data-callback="enableLoginButton"
+             data-expired-callback="disableLoginButton"
+             style="margin: 10px 0;"></div>
+
+        <!-- Error message area -->
+        <div class="help-block with-errors" id="login_err" style="color: red;"></div>
+
+        <!-- JavaScript logic -->
+<!--        <script type="text/javascript">
+          document.addEventListener("DOMContentLoaded", function () {
+              const form = document.querySelector('form.oe_login_form');
+              const submitButton = form.querySelector('button[type="submit"]');
+              const errorBox = document.getElementById('login_err');
+
+              // Disable button by default
+              submitButton.disabled = true;
+
+              // Enable on valid captcha
+              window.enableLoginButton = function () {
+                  submitButton.disabled = false;
+                  errorBox.innerText = '';
+              };
+
+              // Disable on expired captcha
+              window.disableLoginButton = function () {
+                  submitButton.disabled = true;
+                  errorBox.innerText = "Please verify 'I am not a robot'.";
+              };
+
+              // Final double-check before submit
+              form.addEventListener("submit", function (e) {
+                  const captchaResponse = grecaptcha.getResponse();
+                  if (!captchaResponse) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      errorBox.innerText = "Please complete the reCAPTCHA before logging in.";
+                      submitButton.disabled = true;
+                      return false;
+                  }
+              });
           });
+        </script>-->
+
+
+          <script type="text/javascript">
+        document.addEventListener("DOMContentLoaded", function () {
+            const form = document.querySelector('form.oe_login_form');
+            const submitButton = form.querySelector('button[type="submit"]');
+            const errorBox = document.getElementById('login_err');
+            const CAPTCHA_KEY = 'recaptcha_verified';  // Key to store in local storage
+            const recaptchaAlreadyVerified = localStorage.getItem(CAPTCHA_KEY);
+
+            // Disable button by default
+            submitButton.disabled = true;
+
+            // If the user has already verified the captcha, enable the submit button directly
+            if (recaptchaAlreadyVerified === 'true') {
+                submitButton.disabled = false;
+            }
+
+            // Enable the submit button when captcha is verified
+            window.enableLoginButton = function () {
+                submitButton.disabled = false;
+                errorBox.innerText = '';
+                // Save to localStorage that the captcha was verified
+                localStorage.setItem(CAPTCHA_KEY, 'true');
+            };
+
+            // Disable the submit button when captcha expires
+            window.disableLoginButton = function () {
+                submitButton.disabled = true;
+                errorBox.innerText = "Please verify 'I am not a robot'.";
+                // Optionally, clear the localStorage if the captcha expires
+                localStorage.removeItem(CAPTCHA_KEY);
+            };
+
+            // Final double-check before form submit
+            form.addEventListener("submit", function (e) {
+                const captchaResponse = grecaptcha.getResponse();
+                if (!captchaResponse &amp;&amp; !recaptchaAlreadyVerified) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    errorBox.innerText = "Please complete the reCAPTCHA before logging in.";
+                    submitButton.disabled = true;
+                    return false;
+                }
+            });
         });
       </script>
+
+
+
+
     </xpath>
-  </template>
+</template>
+
+
+<template id="signup_recaptcha_inherit" inherit_id="auth_signup.signup" name="Signup Page reCAPTCHA">
+<!--    <xpath expr="//form[contains(@class, 'oe_signup_form')]" position="inside">-->
+  <xpath expr="//button[@type='submit']" position="before">
+
+        <!-- Load Google reCAPTCHA script -->
+        <script src="https://www.google.com/recaptcha/api.js" async="true" defer="true"></script>
+
+        <!-- reCAPTCHA Widget -->
+        <div class="g-recaptcha"
+             data-sitekey="6Le5nMQUAAAAALpK02mtPPGnpjVlnq6orhz4Zj0u"
+             data-callback="enableSignupButton"
+             data-expired-callback="disableSignupButton"
+             style="margin: 10px 0;"></div>
+
+        <!-- Error Message -->
+        <div class="help-block with-errors" id="signup_err" style="color: red;"></div>
+
+        <!-- JavaScript logic -->
+        <script type="text/javascript">
+          document.addEventListener("DOMContentLoaded", function () {
+              const form = document.querySelector('form.oe_signup_form');
+              const submitButton = form.querySelector('button[type="submit"]');
+              const errorBox = document.getElementById('signup_err');
+
+              // Disable submit button initially
+              submitButton.disabled = true;
+
+              // Enable when captcha is passed
+              window.enableSignupButton = function () {
+                  submitButton.disabled = false;
+                  errorBox.innerText = '';
+              };
+
+              // Disable when captcha expires
+              window.disableSignupButton = function () {
+                  submitButton.disabled = true;
+                  errorBox.innerText = "Please verify 'I am not a robot'.";
+              };
+
+              // Final validation before submit
+              form.addEventListener("submit", function (e) {
+                  const captchaResponse = grecaptcha.getResponse();
+                  if (!captchaResponse) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      errorBox.innerText = "Please complete the reCAPTCHA before signing up.";
+                      submitButton.disabled = true;
+                      return false;
+                  }
+              });
+          });
+        </script>
+
+    </xpath>
+</template>
+
+
 
 </odoo>
+
